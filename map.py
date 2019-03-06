@@ -39,4 +39,7 @@ class MapFile():
                 if i.name == key:
                     return i
         else:
-            raise IndexError
+            raise TypeError
+
+    def __len__(self):
+        return len(self.functions)
