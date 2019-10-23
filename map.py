@@ -41,10 +41,10 @@ class MapFileRenameSymbolHandler(ida_kernwin.action_handler_t):
             return ida_kernwin.AST_DISABLE_FOR_WIDGET
 
     def activate(self, ctx):
-        if len(map_file) is not 0:
+        if len(map_file) is 0:
             # No symbol loaded, aborting
             return
-        srva = get_name_ea(here(), ida_kernwin.get_highlight(ida_kernwin.get_current_viewer())[0])
+        srva = int(get_name_ea(here(), ida_kernwin.get_highlight(ida_kernwin.get_current_viewer())[0]))
         idc.set_name(srva, map_file[srva].replace("~", "::Destruct"), SN_CHECK)
         ida_kernwin.request_refresh(ida_kernwin.IWID_DISASMS)
 
