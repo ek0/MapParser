@@ -83,10 +83,29 @@ class MapFileRenameSymbolHandler(ida_kernwin.action_handler_t):
         for i in mapfile_chooser.GetSelectedItems():
             srva = int(mapfile_chooser.GetLine(i)[0], 16)
             name = mapfile_chooser.GetLine(i)[2]
-            print("{} {}".format(srva, name))
             ida_name.set_name(srva, name.replace("~", "::Destruct"), ida_name.SN_CHECK)
             ida_kernwin.request_refresh(ida_kernwin.IWID_DISASMS)
 
+
+class MapFileRenameFunctionHandler(ida_kernwin.action_handler_t):
+    """
+        Contextual menu for renaming functions
+    """
+    def __init__(self):
+        ida_kernwin.action_handler_t.__init__(self)
+
+    def update(self, ctx):
+        return ida_kernwin.AST_ENABLE_FOR_WIDGET
+
+    def activate(self, ctx):
+        if len(map_file) is 0:
+            # No symbol loaded, aborting
+            return
+        for i in mapfile_chooser.GetSelectedItems():
+            srva = int(mapfile_chooser.GetLine(i)[0], 16)
+            name = mapfile_chooser.GetLine(i)[2]
+            ida_name.set_name(srva, name.replace("~", "::Destruct"), ida_name.SN_CHECK)
+            ida_funcs.add_func(srva, ida_idaapi.BADADDR)
 
 class Hooks(ida_kernwin.UI_Hooks):
     def finish_populating_widget_popup(self, form, popup):
@@ -119,7 +138,10 @@ class MapFileChooser(ida_kernwin.Choose):
             self.items.append(line)
 
     def OnPopup(self, form, popup_handle):
-        ida_kernwin.attach_action_to_popup(form, popup_handle, "mapfile:rename_symbol", None)
+        desc1 = ida_kernwin.action_desc_t("mapfile:rename_symbol", "Rename symbol at address", MapFileRenameSymbolHandler())
+        ida_kernwin.attach_dynamic_action_to_popup(form, popup_handle, desc1)
+        desc2 = ida_kernwin.action_desc_t("mapfile:rename_function", "Rename function at address", MapFileRenameFunctionHandler())
+        ida_kernwin.attach_dynamic_action_to_popup(form, popup_handle, desc2)
 
     def OnGetLine(self, idx):
         return self.items[idx]
@@ -149,7 +171,6 @@ def unload():
     ida_kernwin.unregister_action("mapfile:rename_symbol_at_cursor")
     ida_kernwin.unregister_action("mapfile:load_map")
     ida_kernwin.unregister_action("mapfile:view_symbols")
-    ida_kernwin.unregister_action("mapfile:rename_symbol")
     global hooks
     global map_file
     global mapfile_chooser
@@ -164,7 +185,6 @@ def register_actions():
     ida_kernwin.register_action(ida_kernwin.action_desc_t("mapfile:rename_symbol_at_cursor", "Get Symbol", MapFileRenameSymbolAtCursorHandler(), "", "Get the symbol for a given address"))
     ida_kernwin.register_action(ida_kernwin.action_desc_t("mapfile:load_map", "Load MAP...", MapFileMenuHandler(), "", "Load map file"))
     ida_kernwin.register_action(ida_kernwin.action_desc_t("mapfile:view_symbols", "MAP Symbols", MapFileShowSymbols(), "", "View map file symbols"))
-    ida_kernwin.register_action(ida_kernwin.action_desc_t("mapfile:rename_symbol", "Rename/Create symbol at address", MapFileRenameSymbolHandler(), "", "Rename/Create symbol at address"))
     ida_kernwin.attach_action_to_menu("File/Load file/", "mapfile:load_map", ida_kernwin.SETMENU_APP)
     ida_kernwin.attach_action_to_menu("View/Open subviews/", "mapfile:view_symbols", ida_kernwin.SETMENU_APP)
     global hooks
